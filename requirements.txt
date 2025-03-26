@@ -1,0 +1,6 @@
+fastapi
+langchain
+supabase
+python-dotenv
+uvicorn
+pydantic
