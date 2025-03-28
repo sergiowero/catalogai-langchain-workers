@@ -1,31 +1,32 @@
 from fastapi import APIRouter, HTTPException
-from app.services.embeddings import create_embedding, save_embedding_to_supabase
-from app.services.queue import queue_read
+from models.requests import EmbeddingRequest
+from services.queues import embeddings_queue_read
+from usecases import embeddings_worker
 
 router = APIRouter(prefix='/api/v1')
 
-@router.post("/embeddings/")
-async def generate_and_save_embedding(data: dict):
+
+@router.post('/embeddings')
+def generate_embedding(request: EmbeddingRequest):
     try:
-        # Create embedding using LangChain
-        embedding = await create_embedding(data["text"])
-        
-        # Save embedding to Supabase
-        await save_embedding_to_supabase(embedding)
-        
-        return {"message": "Embedding created and saved successfully", "embedding": embedding}
+        result = embeddings_worker.execute(request.items_to_process)
+
+        return {'message': 'Embedding complete', 'result': result}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-    
-@router.get("/jobs/")
-async def get_jobs():
+
+
+@router.get('/queues/embeddings')
+def get_embedding_queue_items():
     try:
         # Read from the queue
-        jobs = queue_read()
-        
-        if not jobs:
-            raise HTTPException(status_code=404, detail="No jobs found")
-        
-        return {"jobs": jobs}
+        items = embeddings_queue_read()
+
+        if not items:
+            raise HTTPException(
+                status_code=404, detail='No embeddings items found in the queue'
+            )
+
+        return {'items': items}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

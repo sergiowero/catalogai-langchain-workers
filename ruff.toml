@@ -1,0 +1,7 @@
+exclude = [ ".venv" ]
+fix = true
+
+
+[format]
+quote-style = "single"
+docstring-code-format = true

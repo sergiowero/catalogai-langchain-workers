@@ -1,24 +1,22 @@
-from fastapi import FastAPI
-from app.api.routes import router as api_router
+import logging
 import os
+
+from api.routes import router
 from dotenv import load_dotenv
+from fastapi import FastAPI
 
 load_dotenv()
 
 app = FastAPI()
 
-@app.on_event("startup")
-async def startup_event():
-    # Initialize any resources here if needed
-    pass
+app.include_router(router)
 
-@app.on_event("shutdown")
-async def shutdown_event():
-    # Cleanup resources here if needed
-    pass
+logger = logging.getLogger('uvicorn.error')
+logger.setLevel(logging.DEBUG)
 
-app.include_router(api_router)
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     import uvicorn
-    uvicorn.run(app, host=os.getenv("HOST", "0.0.0.0"), port=int(os.getenv("PORT", 8000)))
+
+    uvicorn.run(
+        app, host=os.getenv('HOST', '0.0.0.0'), port=int(os.getenv('PORT', 8000))
+    )

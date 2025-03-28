@@ -1,18 +1,23 @@
-from langchain_community.embeddings import GooglePalmEmbeddings
-from supabase import create_client, Client
-from config import config
+from google import genai
+from google.genai import types
+from models.embeddings import Embedding
 
-supabase: Client = create_client(config.SUPABASE_URL, config.SUPABASE_KEY)
+client = genai.Client()
 
-def create_embedding(text: str):
-    embedding_model = GooglePalmEmbeddings()
-    embedding = embedding_model.embed(text)
-    return embedding
+DEFAULT_MODEL = 'text-embedding-004'
 
-def save_embedding_to_supabase(embedding: list, metadata: dict):
-    data = {
-        "embedding": embedding,
-        "metadata": metadata
-    }
-    response = supabase.table("embeddings").insert(data).execute()
-    return response
+
+def generate_embedding(contents: list[str]):
+    """
+    Genera un embedding para el texto usando Gemini
+    """
+
+    result = client.models.embed_content(
+        model=DEFAULT_MODEL,
+        contents=contents,
+        config=types.EmbedContentConfig(
+            task_type='RETRIEVAL_DOCUMENT', output_dimensionality=768
+        ),
+    )
+
+    return [Embedding(values=e.values) for e in result.embeddings]
