@@ -1,8 +1,20 @@
+"""
+Product Embeddings Task Module
+
+This module handles the generation of embeddings for product data, including text and image processing.
+It manages the queue of items to process and coordinates the generation of embeddings for product descriptions
+and images, storing the results in Supabase.
+
+The main functionality is provided by the `execute` function, which processes items from the embeddings queue,
+handles image captioning, product description optimization, and embedding generation.
+"""
+
 import logging
 
 from config import config
 from models.product import ProductEmbedding
 from models.queue import JobStatus
+from models.task import EmbeddingTaskParameters
 from services.captioning import get_image_caption
 from services.embeddings import generate_embedding
 from services.optimizers import optimize_product_description
@@ -12,8 +24,12 @@ from services.supabase import supabase
 logger = logging.getLogger('uvicorn.error')
 
 
-def execute(items_to_process: int = 1) -> list[dict]:
-    queue_items = embeddings_queue_read(items_to_process)
+def validate_params(params: dict) -> None:
+    return EmbeddingTaskParameters.model_validate(params)
+
+
+def run(params: EmbeddingTaskParameters):
+    queue_items = embeddings_queue_read(params.items_to_process)
     if queue_items is None:
         return
 
@@ -79,15 +95,15 @@ def execute(items_to_process: int = 1) -> list[dict]:
         embeddings = generate_embedding(product_documents)
         logger.debug(f'Generated embeddings: {embeddings}')
 
-        supabase.table('jobs').update({'status': JobStatus.COMPLETED}).in_(
-            'id', [pe.metadata['job_id'] for pe in product_embeddings]
-        ).execute()
-
         for res, embedding in zip(product_embeddings, embeddings):
             res.embedding = embedding.values
 
         supabase.table('product_embeddings').insert(
-            [pe.model_dump() for pe in product_embeddings]
+            [pe.model_dump(mode='json') for pe in product_embeddings]
+        ).execute()
+
+        supabase.table('jobs').update({'status': JobStatus.COMPLETED}).in_(
+            'id', [pe.metadata['job_id'] for pe in product_embeddings]
         ).execute()
 
     except Exception as e:
@@ -100,5 +116,3 @@ def execute(items_to_process: int = 1) -> list[dict]:
         for item in queue_items:
             logger.info(f'Removing item from queue: {item.msg_id}')
             embeddings_queue_remove(item.msg_id)
-
-    return product_embeddings
