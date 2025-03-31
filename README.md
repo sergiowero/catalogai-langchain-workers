@@ -1,77 +1,89 @@
-# My Python Project
+# CatalogAI LangChain Workers
 
-This project is a FastAPI application that utilizes LangChain for creating embeddings with the Gemini model and stores them in Supabase. It is designed to provide a simple API for generating and managing embeddings, as well as interacting with a queue system for processing embedding jobs.
+A FastAPI-based worker service that processes product data using LangChain and Gemini AI models, storing embeddings in Supabase for efficient semantic search and retrieval.
+
+## Overview
+
+This service is part of the CatalogAI ecosystem, designed to handle background processing of product data. It provides the following core functionalities:
+
+- Generate embeddings for product data using Gemini AI
+- Process image captions using Gemini 2.0 Flash
+- Store embeddings and metadata in Supabase
+- Manage processing queues for distributed workloads
+- Optimize product descriptions using AI
 
 ## Project Structure
 
 ```
-my-python-project
+catalogai-langchain-workers
 ├── app
-│   ├── main.py              # Entry point of the FastAPI application
+│   ├── main.py              # FastAPI application entry point
 │   ├── api
-│   │   └── routes.py        # API routes for handling requests
+│   │   └── routes.py        # API route definitions
 │   ├── services
-│   │   ├── embeddings.py    # Logic for creating and saving embeddings
-│   │   ├── queues.py        # Queue management services
-│   │   └── captioning.py    # Image captioning logic
-│   └── models
-│       ├── product.py       # Product-related data models
-│       └── queue.py         # Queue-related data models
-├── .env                      # Environment variables for configuration
-├── requirements.txt          # Project dependencies
-├── README.md                 # Project documentation
-└── config.py                 # Configuration settings and environment loading
+│   │   ├── embeddings.py    # Gemini embedding generation
+│   │   ├── queues.py        # Queue management
+│   │   ├── captioning.py    # Image captioning
+│   │   └── optimizers.py    # Product description optimization
+│   ├── models
+│   │   ├── product.py       # Product data models
+│   │   ├── queue.py         # Queue data models
+│   │   └── embeddings.py    # Embedding data models
+│   └── tasks
+│       └── product_embeddings.py  # Background task implementations
+├── .env                     # Environment configuration
+├── requirements.txt         # Project dependencies
+├── README.md                # Project documentation
+└── config.py                # Configuration management
 ```
+
+## Requirements
+
+- Python 3.8+
+- FastAPI
+- LangChain
+- Supabase
+- Google GenAI API
+- Uvicorn
+- Pydantic
 
 ## Setup Instructions
 
-1. **Clone the repository:**
-   ```
+1. **Clone the repository**
+   ```bash
    git clone <repository-url>
-   cd my-python-project
+   cd catalogai-langchain-workers
    ```
 
-2. **Create a virtual environment:**
-   ```
+2. **Create a virtual environment**
+   ```bash
    python -m venv venv
    source venv/bin/activate  # On Windows use `venv\Scripts\activate`
    ```
 
-3. **Install dependencies:**
-   ```
+3. **Install dependencies**
+   ```bash
    pip install -r requirements.txt
    ```
 
-4. **Configure environment variables:**
-   Create a `.env` file in the root directory and add your Supabase API keys and other necessary configurations. Example:
+4. **Configure environment variables**
+   Create a `.env` file in the root directory with the following variables:
    ```
    SUPABASE_URL=<your-supabase-url>
    SUPABASE_KEY=<your-supabase-key>
+   GOOGLE_API_KEY=<your-google-api-key>
+   ENABLE_IMAGE_CAPTIONS=false  # Set to true to enable image captioning
    ```
 
-5. **Run the application:**
-   ```
+5. **Run the application**
+   ```bash
    uvicorn app.main:app --reload
    ```
 
-## Feature Flags
-
-The application supports feature flags for enabling or disabling specific functionality. Currently, the following feature flag is available:
-
-- `ENABLE_IMAGE_CAPTIONS`: Set to `true` to enable image captioning functionality. Defaults to `false`.
-
-To enable this feature, add the following to your `.env` file:
-
-```
-ENABLE_IMAGE_CAPTIONS=true
-```
-
-## Usage
-
-Once the application is running, you can access the API at `http://localhost:8000`. The API provides the following endpoints:
+## API Endpoints
 
 ### POST `/api/v1/embeddings`
-Generates embeddings for a specified number of items in the queue.
+Generate embeddings for products in the queue.
 
 **Request Body:**
 ```json
@@ -80,16 +92,8 @@ Generates embeddings for a specified number of items in the queue.
 }
 ```
 
-**Response:**
-```json
-{
-    "message": "Embedding complete",
-    "result": [...]
-}
-```
-
 ### GET `/api/v1/queues/embeddings`
-Retrieves items currently in the embeddings queue.
+Retrieve items currently in the embeddings queue.
 
 **Response:**
 ```json
@@ -98,16 +102,22 @@ Retrieves items currently in the embeddings queue.
 }
 ```
 
-### OpenAPI Documentation
-FastAPI automatically generates OpenAPI documentation for the application. You can access it at:
+## Feature Flags
 
-- Interactive API docs: [http://localhost:8000/docs](http://localhost:8000/docs)
-- Raw OpenAPI JSON: [http://localhost:8000/openapi.json](http://localhost:8000/openapi.json)
+- `ENABLE_IMAGE_CAPTIONS`: Set to `true` to enable image captioning functionality. Defaults to `false`.
+
+## Development
+
+The project uses FastAPI with async/await patterns for efficient background processing. It implements a queue-based architecture to handle distributed workloads, making it suitable for processing large volumes of product data.
 
 ## Contributing
 
-Feel free to submit issues or pull requests if you have suggestions or improvements for the project. 
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
 ## License
 
-This project is licensed under the MIT License. See the LICENSE file for more details.
+This project is licensed under the MIT License - see the LICENSE file for details.

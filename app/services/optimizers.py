@@ -7,8 +7,8 @@ from models.product import Product
 system_prompt = """
 Eres un experto en bienes raíces y en RAG. Tu tarea es crear descripciones claras, concisas e informativas de propiedades para compradores potenciales. 
 Debes resaltar características clave como ubicación, tamaño, amenidades (habitaciones, baños, cochera, etc.) y detalles visuales.
-El tono debe ser profesional pero descriptivo, es iportante que sea optimizado para busquedas RAG con embeddings.
-la descripción no debe exceder las 250 palabras.
+El tono debe ser profesional pero descriptivo, es importante que sea optimizado para busquedas RAG con embeddings.
+La descripción no debe exceder las 250 palabras.
 """
 
 # Definir el prompt específico (user prompt con datos del producto)
