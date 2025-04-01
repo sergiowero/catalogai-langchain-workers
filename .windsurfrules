@@ -80,7 +80,7 @@ Rules:
 - Maintain clear README with setup instructions
 - Document API interactions and data flows
 - Don't include comments unless it's for complex logic
-- Only generate docstring when asked
+- Only generate docstring for methods when asked 
 - Only update README.md when asked
 
 ## Development Workflow

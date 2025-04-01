@@ -3,13 +3,10 @@ API Routes Module
 
 This module defines the FastAPI routes for handling product embeddings and queue management.
 It provides endpoints for generating embeddings and managing the embeddings queue.
-
-Endpoints:
-    - POST /embeddings: Generate embeddings for product data
-    - GET /queues/embeddings: Retrieve items from the embeddings queue
 """
 
-from fastapi import APIRouter, BackgroundTasks, HTTPException
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Query
+from models.queue import EmbeddingQueueItem
 from models.task import TaskRequest, TaskRunner
 from pydantic import ValidationError
 from services.queues import embeddings_queue_read
@@ -63,19 +60,30 @@ def run_task(request: TaskRequest, task_id: str, background_tasks: BackgroundTas
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get('/queues/embeddings')
-def get_embedding_queue_items():
+@router.get(
+    '/queues/embeddings',
+    summary='Retrieve items from the embeddings queue',
+    description='Get a specified number of items from the embeddings queue. Useful for monitoring and debugging queue operations.',
+    response_description='List of embeddings queue items',
+    responses={
+        404: {'description': 'No embeddings items found in the queue'},
+        500: {'description': 'Internal server error'},
+    },
+    response_model=list[EmbeddingQueueItem],
+)
+def get_embedding_queue_items(
+    number: int = Query(
+        default=10,
+        description='Number of items to retrieve from the queue',
+        ge=1,  # minimum value
+        le=100,  # maximum value
+    ),
+):
     """
     Retrieve items from the embeddings queue.
-
-    Returns:
-        dict: Response containing the queue items
-
-    Raises:
-        HTTPException: If no items are found in the queue or if there's an error
     """
     try:
-        items = embeddings_queue_read()
+        items = embeddings_queue_read(number)
 
         if not items:
             raise HTTPException(
