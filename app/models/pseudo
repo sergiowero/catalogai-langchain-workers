@@ -1,0 +1,18 @@
+- PRD (Product requirements document)
+
+- Pull from queue list of EmbeddingQueueItem(msg_id, job_id, product)
+- each item (workflow)
+    - set job status as processing -> usando el job_id
+    - generate captions 
+        - por cada image_url in product.image_urls si no existe en base de datos (usar hash de la url)
+            - generar caption
+            - on complete -> guardar en base de datos
+    - generate description
+    - on fail -> mark job as failed
+    - on success -> guardar en base de datos y agregar a los results del workflow
+    - on complete -> borrar de la cola
+
+- generate embeddings de las descripciones de producto que que no hayan fallado
+    - save embeddings
+- mark jobs all remaining as success
+- delete all remaining jobs

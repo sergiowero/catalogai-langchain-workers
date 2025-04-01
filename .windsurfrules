@@ -1,0 +1,90 @@
+# catalogai workers
+
+Every time you choose to apply a rule(s), explicitly state the rule(s) in the output. You can abbreviate the rule description to a single word or phrase.
+
+## Project Context
+[Brief description ]
+- [more description]
+- [more description]
+- [more description]
+
+## Code Style and Structure
+- Write concise, technical TypeScript code with accurate examples
+- Use functional and declarative programming patterns; avoid classes
+- Prefer iteration and modularization over code duplication
+- Use descriptive variable names with auxiliary verbs (e.g., isLoading, hasError)
+- Structure repository files as follows:
+```
+app/
+├── api/       # api routes
+├── models/    # models classes (using pydantic)
+├── services/  # service classes
+├── tasks/     # background jobs tasks
+├── usecases/  # use cases for api routes
+└── workflows/ # workflow definitions
+
+```
+
+## Tech Stack
+- Python 3.13.*
+- Fast API
+- Pydantic
+- langchain
+- supabase
+
+## Naming Conventions
+- Use lowercase with dashes for directories or python modules (e.g., rules)
+- Favor pydatic classes for data models
+
+## TypeScript Usage
+- Use python ruff defaul formating and linter
+- Use functional methods for builders
+- Favor type annotations
+- Imports root is app 
+- Annotate return method typings only if it si different that None
+
+## State Management
+- Use React Context for global state when needed
+- Implement proper state persistence using chrome.storage (for extension)
+- Implement proper cleanup in useEffect hooks
+
+## Error Handling
+- Favor custom exception classes
+- Use uviconn.error logger
+- Log errors appropriately for debugging
+- Provide user-friendly error messages
+- Handle network failures gracefully
+
+## Testing
+- Write unit tests for everything under the test folder and following the same directory structure
+- Use pytest
+
+## Git Usage
+Commit Message Prefixes:
+- "fix:" for bug fixes
+- "feat:" for new features
+- "perf:" for performance improvements
+- "docs:" for documentation changes
+- "style:" for formatting changes
+- "refactor:" for code refactoring
+- "test:" for adding missing tests
+- "chore:" for maintenance tasks
+
+Rules:
+- Use lowercase for commit messages
+- Keep the summary line concise
+- Include description for non-obvious changes
+- Reference issue numbers when applicable
+
+## Documentation
+- Maintain clear README with setup instructions
+- Document API interactions and data flows
+- Don't include comments unless it's for complex logic
+- Only generate docstring when asked
+- Only update README.md when asked
+
+## Development Workflow
+- Use proper version control
+- Implement proper code review process
+- Follow semantic versioning for releases
+- Maintain changelog
