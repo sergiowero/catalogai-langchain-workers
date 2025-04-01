@@ -6,7 +6,7 @@ It provides endpoints for generating embeddings and managing the embeddings queu
 """
 
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Query
-from models.queue import EmbeddingQueueItem
+from models.responses import EmbeddingQueueResponse
 from models.task import TaskRequest, TaskRunner
 from pydantic import ValidationError
 from services.queues import embeddings_queue_read
@@ -69,7 +69,6 @@ def run_task(request: TaskRequest, task_id: str, background_tasks: BackgroundTas
         404: {'description': 'No embeddings items found in the queue'},
         500: {'description': 'Internal server error'},
     },
-    response_model=list[EmbeddingQueueItem],
 )
 def get_embedding_queue_items(
     number: int = Query(
@@ -78,7 +77,7 @@ def get_embedding_queue_items(
         ge=1,  # minimum value
         le=100,  # maximum value
     ),
-):
+) -> EmbeddingQueueResponse:
     """
     Retrieve items from the embeddings queue.
     """
@@ -90,6 +89,6 @@ def get_embedding_queue_items(
                 status_code=404, detail='No embeddings items found in the queue'
             )
 
-        return {'items': items}
+        return {'items': items, 'queue_name': 'embedding_jobs'}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
