@@ -17,7 +17,8 @@ router = APIRouter(prefix='/api/v1')
 task_runners = {
     'product-embeddings': TaskRunner(
         method=product_embeddings.run, params=product_embeddings.validate_params
-    )
+    ),
+    'handle-event-queue': TaskRunner(method=lambda _: None, params=lambda _: _),
 }
 
 
