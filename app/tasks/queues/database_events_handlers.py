@@ -29,7 +29,7 @@ def handle_product_insert_event(message: DatabaseQueueMessage):
             f'Created job for product_id: {message.row_id}, job_id: {data.data[0]["id"]}'
         )
 
-        queue_message = {'job_id': data.data[0]['id'], 'product_id': message.row_id}
+        queue_message = {'job_id': data.data[0]['id'], 'product': message.curr}
 
         queues.rpc(
             'send',
@@ -75,7 +75,7 @@ def handle_product_update_event(message: DatabaseQueueMessage):
             f'Created summary job for product_id: {message.row_id}, job_id: {data.data[0]["id"]}'
         )
 
-        queue_message = {'job_id': data.data[0]['id'], 'product_id': message.row_id}
+        queue_message = {'job_id': data.data[0]['id'], 'product': message.curr}
 
         queues.rpc(
             'send',
