@@ -2,6 +2,7 @@ import uuid
 from typing import Optional
 
 from pydantic import BaseModel, Field, HttpUrl
+from services.supabase import supabase
 
 
 class Product(BaseModel):
@@ -15,6 +16,12 @@ class Product(BaseModel):
     metadata: Optional[dict] = None
     price: Optional[float] = None
 
+    @staticmethod
+    def fetchById(id: int) -> 'Product':
+        response = supabase.table('products').select('*').eq('id', id).execute()
+
+        return Product.model_validate(response.data[0])
+
 
 class ProductEmbedding(BaseModel):
     product_id: int
@@ -22,3 +29,9 @@ class ProductEmbedding(BaseModel):
     owner_id: uuid.UUID
     embedding: list[float] | None = Field(exclude=True)
     metadata: Optional[dict] = None
+
+    @staticmethod
+    def insert(product_embedding: 'ProductEmbedding'):
+        supabase.table('product_embeddings').insert(
+            product_embedding.model_dump(mode='json')
+        ).execute()

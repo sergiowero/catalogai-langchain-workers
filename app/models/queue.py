@@ -6,12 +6,6 @@ from pydantic import BaseModel, ConfigDict
 from models.product import Product
 
 
-class JobStatus(str, Enum):
-    PENDING = 'pending'
-    PROCESSING = 'processing'
-    COMPLETED = 'completed'
-    FAILED = 'failed'
-
 
 class EmbeddingQueueMessage(BaseModel):
     job_id: int

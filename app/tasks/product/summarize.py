@@ -1,63 +1,55 @@
 import logging
 
-from models.product import ProductEmbedding
-from models.queue import JobStatus, SummarizeQueueItem
+from celeryapp import celery
+from models.job import Job
+from models.product import Product, ProductEmbedding
+from models.queue import JobStatus
+from pydantic import BaseModel
 from services.optimizers import optimize_product_description
-from services.queues import summary_jobs_queue_remove
-from services.supabase import supabase
 
 logger = logging.getLogger('uvicorn.error')
 
 
-def run(item: SummarizeQueueItem):
-    supabase.table('jobs').update({'status': JobStatus.PROCESSING}).eq(
-        'id', item.message.job_id
-    ).execute()
+class SummarizeJob(BaseModel):
+    job_id: int
+    product_id: int
 
+
+@celery.task(bind=True, name='product.summarize')
+def summarize(self, params: dict):
     try:
-        logger.info(
-            f'Creating summary for: {item.message.product.id} in response of message: {item.msg_id}'
-        )
-        message = optimize_product_description(
-            item.message.product, item.message.image_captions
-        )
+        job = SummarizeJob.model_validate(params)
+        Job.updateStatus(job.job_id, JobStatus.PROCESSING)
+        logger.info(f'Creating summary for: {job.product_id} for job: {job.job_id}')
+        product = Product.fetchById(job.product_id)
+        message = optimize_product_description(product, [])
         logger.debug(
-            f'Optimization description: {message} for product: {item.message.product.id} in response of message: {item.msg_id}'
+            f'Summary: {message} for product: {product.id} for job {job.job_id}'
         )
 
         # validate before insertion
         product_embedding = ProductEmbedding.model_validate(
             {
-                'product_id': item.message.product.id,
+                'owner_id': product.owner_id,
+                'product_id': product.id,
                 'content': message.content,
-                'owner_id': item.message.product.owner_id,
                 'embedding': None,
                 'metadata': {
-                    'job_id': item.message.job_id,
+                    'job_id': job.job_id,
                     'optimizer_type': message.type,
                     'optimiser_request_id': message.id,
-                    'queue_id': item.msg_id,
+                    'task_execution_id': self.request.id,
                 },
             }
         )
 
-        supabase.table('product_embeddings').insert(
-            product_embedding.model_dump(mode='json')
-        ).execute()
-
-        supabase.table('jobs').update({'status': JobStatus.COMPLETED}).eq(
-            'id', item.message.job_id
-        ).execute()
-
-        logger.info(f'Removing summary job from queue: {item.msg_id}')
-        summary_jobs_queue_remove(item.msg_id)
+        ProductEmbedding.insert(product_embedding)
+        Job.updateStatus(job.job_id, JobStatus.COMPLETED)
 
     except Exception as e:
         logger.error(
-            f'Error creating summary for product: {item.message.product.id} in response of message: {item.msg_id}',
+            f'Error creating summary for product: {job.product_id} for job: {job.job_id} with eror: {e}',
             exc_info=True,
         )
-        supabase.table('jobs').update(
-            {'status': JobStatus.FAILED, 'error_message': str(e)}
-        ).eq('id', item.message.job_id).execute()
+        Job.updateStatus(job.job_id, JobStatus.FAILED)
         raise

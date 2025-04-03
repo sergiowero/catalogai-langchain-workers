@@ -1,5 +1,6 @@
 import logging
 
+from celeryapp import celery
 from models.product import ProductEmbedding
 from models.queue import DatabaseQueueMessage
 from pydantic import ValidationError
@@ -10,7 +11,9 @@ from utils import dict_distinct
 logger = logging.getLogger('uvicorn.error')
 
 
-def handle_product_insert_event(message: DatabaseQueueMessage):
+@celery.task(name='database.process.product.insert')
+def handle_product_insert_event(params: dict):
+    message = DatabaseQueueMessage.model_validate(params)
     logger.info(f'Handling product insert event for product_id: {message.row_id}')
 
     try:
@@ -28,14 +31,10 @@ def handle_product_insert_event(message: DatabaseQueueMessage):
         )
 
         logger.info(
-            f'Created job for product_id: {message.row_id}, job_id: {data.data[0]["id"]}'
+            f'Created summary job for product_id: {message.row_id}, job_id: {data.data[0]["id"]}'
         )
 
-        queue_message = {
-            'job_id': data.data[0]['id'],
-            'product': message.curr,
-            'image_captions': [],
-        }
+        queue_message = {'job_id': data.data[0]['id'], 'product_id': message.row_id}
 
         queues.rpc(
             'send',
@@ -52,7 +51,9 @@ def handle_product_insert_event(message: DatabaseQueueMessage):
         raise
 
 
-def handle_product_update_event(message: DatabaseQueueMessage):
+@celery.task(name='database.process.product.update')
+def handle_product_update_event(params: dict):
+    message = DatabaseQueueMessage.model_validate(params)
     logger.info(f'Handling product update event for product_id: {message.row_id}')
 
     try:
@@ -81,11 +82,7 @@ def handle_product_update_event(message: DatabaseQueueMessage):
             f'Created summary job for product_id: {message.row_id}, job_id: {data.data[0]["id"]}'
         )
 
-        queue_message = {
-            'job_id': data.data[0]['id'],
-            'product': message.curr,
-            'image_captions': [],
-        }
+        queue_message = {'job_id': data.data[0]['id'], 'product_id': message.row_id}
 
         queues.rpc(
             'send',
@@ -102,7 +99,9 @@ def handle_product_update_event(message: DatabaseQueueMessage):
         raise
 
 
-def handle_product_delete_event(message: DatabaseQueueMessage):
+@celery.task(name='database.process.product.delete')
+def handle_product_delete_event(params: dict):
+    message = DatabaseQueueMessage.model_validate(params)
     logger.info(f'Handling product delete event for product_id: {message.row_id}')
 
     try:
@@ -115,7 +114,9 @@ def handle_product_delete_event(message: DatabaseQueueMessage):
         raise
 
 
-def handle_product_caption_insert_event(message: DatabaseQueueMessage):
+@celery.task(name='database.process.product.caption.insert')
+def handle_product_caption_insert_event(params: dict):
+    message = DatabaseQueueMessage.model_validate(params)
     logger.info(
         f'Handling product caption insert event for product_id: {message.row_id}'
     )
@@ -132,7 +133,9 @@ def handle_product_caption_insert_event(message: DatabaseQueueMessage):
         raise
 
 
-def handle_product_caption_update_event(message: DatabaseQueueMessage):
+@celery.task(name='database.process.product.caption.update')
+def handle_product_caption_update_event(params: dict):
+    message = DatabaseQueueMessage.model_validate(params)
     logger.info(
         f'Handling product caption update event for product_id: {message.row_id}'
     )
@@ -149,7 +152,9 @@ def handle_product_caption_update_event(message: DatabaseQueueMessage):
         raise
 
 
-def handle_product_caption_delete_event(message: DatabaseQueueMessage):
+@celery.task(name='database.process.product.caption.delete')
+def handle_product_caption_delete_event(params: dict):
+    message = DatabaseQueueMessage.model_validate(params)
     logger.info(
         f'Handling product caption delete event for product_id: {message.row_id}'
     )
@@ -166,7 +171,9 @@ def handle_product_caption_delete_event(message: DatabaseQueueMessage):
         raise
 
 
-def handle_product_embedding_insert_event(message: DatabaseQueueMessage):
+@celery.task(name='database.process.product.embedding.insert')
+def handle_product_embedding_insert_event(params: dict):
+    message = DatabaseQueueMessage.model_validate(params)
     logger.info(
         f'Handling product embedding insert event for product_id: {message.row_id}'
     )
@@ -226,7 +233,9 @@ def handle_product_embedding_insert_event(message: DatabaseQueueMessage):
         raise
 
 
-def handle_product_embedding_update_event(message: DatabaseQueueMessage):
+@celery.task(name='database.process.product.embedding.update')
+def handle_product_embedding_update_event(params: dict):
+    message = DatabaseQueueMessage.model_validate(params)
     logger.info(f'Handling product embedding update event for id: {message.row_id}')
 
     try:
@@ -281,7 +290,9 @@ def handle_product_embedding_update_event(message: DatabaseQueueMessage):
         raise
 
 
-def handle_product_embedding_delete_event(message: DatabaseQueueMessage):
+@celery.task(name='database.process.product.embedding.delete')
+def handle_product_embedding_delete_event(params: dict):
+    message = DatabaseQueueMessage.model_validate(params)
     logger.info(
         f'Handling product embedding delete event for product_id: {message.row_id}'
     )

@@ -15,7 +15,7 @@ router = APIRouter(prefix='/api/v1')
 
 task_runners = {
     'product-embeddings': embeddings.run,
-    'process-database-event-queue': database_events.run,
+    'process-database-event-queue': database_events,
 }
 
 

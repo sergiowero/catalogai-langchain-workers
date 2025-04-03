@@ -12,8 +12,8 @@ handles image captioning, product description optimization, and embedding genera
 import logging
 
 from config import config
+from models.job import JobStatus
 from models.product import ProductEmbedding
-from models.queue import JobStatus
 from services.captioning import get_image_caption
 from services.embeddings import generate_embedding
 from services.optimizers import optimize_product_description

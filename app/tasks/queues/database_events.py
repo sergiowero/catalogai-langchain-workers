@@ -16,6 +16,7 @@ Key Features:
 
 import logging
 
+from celeryapp import celery
 from models.queue import DatabaseQueueItem
 from services.queues import database_events_queue_read, database_events_queue_remove
 from tasks.queues.database_events_handlers import handlers_table
@@ -23,7 +24,8 @@ from tasks.queues.database_events_handlers import handlers_table
 logger = logging.getLogger('uvicorn.error')
 
 
-def run(params: dict):
+@celery.task(name='database.process.event_queue')
+def process_queue(params: dict):
     logger.info('Starting database event queue processing')
     items = database_events_queue_read(10)
 
@@ -34,10 +36,13 @@ def run(params: dict):
     logger.info(f'Found {len(items)} items in the database event queue')
 
     for item in items:
-        process_single_event(item)
+        process_event.delay(item.model_dump())
 
 
-def process_single_event(item: DatabaseQueueItem):
+@celery.task(name='database.process.event')
+def process_event(params: dict):
+    item = DatabaseQueueItem.model_validate(params)
+
     logger.info(
         f'Processing event: {item.msg_id} - {item.message.type} for table {item.message.table}'
     )
@@ -55,7 +60,7 @@ def process_single_event(item: DatabaseQueueItem):
             )
 
         logger.info(f'Starting handler execution for event {item.msg_id}')
-        handler_func(message)
+        handler_func.delay(message.model_dump())
         logger.info(f'Successfully processed event {item.msg_id}')
         logger.info(f'Removing event {item.msg_id} from queue')
         database_events_queue_remove(item.msg_id)
