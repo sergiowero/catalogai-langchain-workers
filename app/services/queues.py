@@ -12,7 +12,7 @@ def embeddings_queue_read(number: int) -> list[EmbeddingQueueItem]:
     try:
         # Read from the queue
         rpc = queues.rpc(
-            'read', {'queue_name': 'embeddings_jobs', 'sleep_seconds': 60, 'n': number}
+            'read', {'queue_name': 'embeddings_jobs', 'sleep_seconds': 180, 'n': number}
         )
         response = rpc.execute()
         return [EmbeddingQueueItem.model_validate(item) for item in response.data]
@@ -38,7 +38,7 @@ def database_events_queue_read(number: int) -> list[DatabaseQueueItem]:
     try:
         # Read from the queue
         rpc = queues.rpc(
-            'read', {'queue_name': 'database_events', 'sleep_seconds': 60, 'n': number}
+            'read', {'queue_name': 'database_events', 'sleep_seconds': 180, 'n': number}
         )
         response = rpc.execute()
         return [DatabaseQueueItem.model_validate(item) for item in response.data]

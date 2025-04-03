@@ -1,13 +1,29 @@
+"""
+Module for processing database events from the queue system.
+
+This module handles the processing of database events that are queued for
+asynchronous processing. It reads events from the database queue, processes
+them using appropriate handlers, and removes them from the queue upon
+successful processing or failure.
+
+Key Features:
+- Reads database events from the queue
+- Processes events using table-specific handlers
+- Handles errors gracefully with logging
+- Removes processed events from the queue
+
+"""
+
 import logging
 
 from models.queue import DatabaseQueueItem
 from services.queues import database_events_queue_read, database_events_queue_remove
-from tasks.queue.handlers import handlers_table
+from tasks.queues.database_events_handlers import handlers_table
 
 logger = logging.getLogger('uvicorn.error')
 
 
-def process_database_event_queue(params: dict):
+def run(params: dict):
     logger.info('Starting database event queue processing')
     items = database_events_queue_read(10)
 
@@ -41,31 +57,8 @@ def process_single_event(item: DatabaseQueueItem):
         logger.info(f'Starting handler execution for event {item.msg_id}')
         handler_func(message)
         logger.info(f'Successfully processed event {item.msg_id}')
+        logger.info(f'Removing event {item.msg_id} from queue')
+        database_events_queue_remove(item.msg_id)
     except Exception as e:
         logger.error(f'Error processing event {item.msg_id}: {str(e)}', exc_info=True)
         raise
-    finally:
-        logger.info(f'Removing event {item.msg_id} from queue')
-        database_events_queue_remove(item.msg_id)
-
-
-# task = SequencedTask(
-#     name='Process Event Queue',
-#     id='process-event-queue',
-#     output_name='event',
-#     tasks=[
-#         read_queue_task,
-#         ForEachTask(
-#             id='process-each-item',
-#             name='Process each queue item',
-#             input_field='items',
-#             value_field='item',
-#             output_name='results',
-#             task=ConditionalTask(
-#                 id='choose event type', name='Chose event task', conditions={
-
-#                 }
-#             ),
-#         ),
-#     ],
-# )

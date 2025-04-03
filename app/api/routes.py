@@ -6,21 +6,16 @@ It provides endpoints for generating embeddings and managing the embeddings queu
 """
 
 from fastapi import APIRouter, BackgroundTasks, HTTPException
-from models.task import TaskRequest, TaskRunner
+from models.requests import TaskRequest
 from pydantic import ValidationError
-from tasks import product_embeddings
-
-from tasks.queue.event import process_database_event_queue
+from tasks.product import embeddings
+from tasks.queues import database_events
 
 router = APIRouter(prefix='/api/v1')
 
 task_runners = {
-    'product-embeddings': TaskRunner(
-        method=product_embeddings.run, params=product_embeddings.validate_params
-    ),
-    'process-database-event-queue': TaskRunner(
-        method=process_database_event_queue, params=lambda _: _
-    ),
+    'product-embeddings': embeddings.run,
+    'process-database-event-queue': database_events.run,
 }
 
 
@@ -41,12 +36,12 @@ def run_task(request: TaskRequest, task_id: str, background_tasks: BackgroundTas
     Execute a background task with the provided parameters.
     """
     try:
-        task = task_runners.get(task_id)
+        task_func = task_runners.get(task_id)
 
-        if not task:
+        if not task_func:
             raise HTTPException(status_code=404, detail='Task not found')
 
-        background_tasks.add_task(task.method, task.params(request.parameters))
+        background_tasks.add_task(task_func, request.parameters)
 
         return {'message': 'Task started', 'task_id': task_id}
     except HTTPException as e:
