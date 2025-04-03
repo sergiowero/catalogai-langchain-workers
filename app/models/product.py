@@ -20,5 +20,5 @@ class ProductEmbedding(BaseModel):
     product_id: int
     content: str
     owner_id: uuid.UUID
-    embedding: list[float] = Field(exclude=True)
+    embedding: list[float] | None = Field(exclude=True)
     metadata: Optional[dict] = None

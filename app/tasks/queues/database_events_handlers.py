@@ -1,6 +1,8 @@
 import logging
 
+from models.product import ProductEmbedding
 from models.queue import DatabaseQueueMessage
+from pydantic import ValidationError
 from services.queues import queues
 from services.supabase import supabase
 from utils import dict_distinct
@@ -29,7 +31,11 @@ def handle_product_insert_event(message: DatabaseQueueMessage):
             f'Created job for product_id: {message.row_id}, job_id: {data.data[0]["id"]}'
         )
 
-        queue_message = {'job_id': data.data[0]['id'], 'product': message.curr}
+        queue_message = {
+            'job_id': data.data[0]['id'],
+            'product': message.curr,
+            'image_captions': [],
+        }
 
         queues.rpc(
             'send',
@@ -75,7 +81,11 @@ def handle_product_update_event(message: DatabaseQueueMessage):
             f'Created summary job for product_id: {message.row_id}, job_id: {data.data[0]["id"]}'
         )
 
-        queue_message = {'job_id': data.data[0]['id'], 'product': message.curr}
+        queue_message = {
+            'job_id': data.data[0]['id'],
+            'product': message.curr,
+            'image_captions': [],
+        }
 
         queues.rpc(
             'send',
@@ -162,10 +172,53 @@ def handle_product_embedding_insert_event(message: DatabaseQueueMessage):
     )
 
     try:
-        # Add your embedding insert handling logic here
+        product_embedding = ProductEmbedding.model_validate(message.curr)
+
+        if product_embedding.embedding is not None:
+            logger.info(
+                f'Product embedding already exists for product_id skipping summary job: {message.row_id}'
+            )
+            return
+
+        data = (
+            supabase.table('jobs')
+            .insert(
+                {
+                    'owner_id': product_embedding.owner_id,
+                    'product_id': product_embedding.product_id,
+                    'job_type': 'embeddings',
+                    'status': 'pending',
+                }
+            )
+            .execute()
+        )
+
+        logger.info(
+            f'Created embeddings job for product_id: {message.row_id}, job_id: {data.data[0]["id"]}'
+        )
+
+        queue_message = {
+            'job_id': data.data[0]['id'],
+            'product_embedding': product_embedding.model_dump(mode='json'),
+        }
+
+        queues.rpc(
+            'send',
+            {
+                'queue_name': 'embeddings_jobs',
+                'sleep_seconds': 10,
+                'message': queue_message,
+            },
+        ).execute()
+
         logger.info(
             f'Successfully handled embedding insert event for product_id: {message.row_id}'
         )
+    except ValidationError as ve:
+        logger.error(
+            f'Error validating product embedding insert event: {str(ve)}', exc_info=True
+        )
+        raise
     except Exception as e:
         logger.error(
             f'Error handling product embedding insert event: {str(e)}', exc_info=True
@@ -174,14 +227,52 @@ def handle_product_embedding_insert_event(message: DatabaseQueueMessage):
 
 
 def handle_product_embedding_update_event(message: DatabaseQueueMessage):
-    logger.info(
-        f'Handling product embedding update event for product_id: {message.row_id}'
-    )
+    logger.info(f'Handling product embedding update event for id: {message.row_id}')
 
     try:
-        # Add your embedding update handling logic here
+        diff_found = dict_distinct(message.curr, message.prev)
+
+        if diff_found is False:
+            logger.info(
+                f'No significant changes found in product embedding update for id: {message.row_id}'
+            )
+            return
+
+        product_embedding = ProductEmbedding.model_validate(message.curr)
+
+        data = (
+            supabase.table('jobs')
+            .insert(
+                {
+                    'owner_id': product_embedding.owner_id,
+                    'product_id': product_embedding.product_id,
+                    'job_type': 'embeddings',
+                    'status': 'pending',
+                }
+            )
+            .execute()
+        )
+
         logger.info(
-            f'Successfully handled embedding update event for product_id: {message.row_id}'
+            f'Created embeddings job for product_id: {message.row_id}, job_id: {data.data[0]["id"]}'
+        )
+
+        queue_message = {
+            'job_id': data.data[0]['id'],
+            'product_embedding': product_embedding.model_dump(mode='json'),
+        }
+
+        queues.rpc(
+            'send',
+            {
+                'queue_name': 'embeddings_jobs',
+                'sleep_seconds': 10,
+                'message': queue_message,
+            },
+        ).execute()
+
+        logger.info(
+            f'Successfully handled product embedding update event for id: {message.row_id}'
         )
     except Exception as e:
         logger.error(
