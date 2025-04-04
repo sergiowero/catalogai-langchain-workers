@@ -6,3 +6,4 @@ uvicorn
 pydantic
 google-genai
 langchain-google-genai
+celery[rabbitmq]
