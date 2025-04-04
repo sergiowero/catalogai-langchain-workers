@@ -1,6 +1,7 @@
 from google import genai
 from google.genai import types
-from models.embeddings import Embedding
+
+from app.models.embeddings import Embedding
 
 client = genai.Client()
 

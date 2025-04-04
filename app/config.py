@@ -13,6 +13,7 @@ class Config:
         os.getenv('ENABLE_IMAGE_CAPTIONS', 'false').lower() == 'true'
     )
     CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL')
+    CELERY_BACKEND_URL = os.getenv('CELERY_BACKEND_URL')
 
 
 config = Config()

@@ -1,7 +1,8 @@
 from langchain.prompts import ChatPromptTemplate
 from langchain_core.messages.ai import AIMessage
 from langchain_google_genai import ChatGoogleGenerativeAI
-from models.product import Product
+
+from app.models.product import Product
 
 # Definir el system prompt (instrucciones generales)
 system_prompt = """

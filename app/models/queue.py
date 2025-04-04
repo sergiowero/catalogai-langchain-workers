@@ -1,10 +1,8 @@
-from enum import Enum
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict
 
-from models.product import Product
-
+from app.models.product import Product
 
 
 class EmbeddingQueueMessage(BaseModel):

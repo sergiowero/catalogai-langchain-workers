@@ -1,49 +1,86 @@
+"""
+Module for processing database events from the queue system.
+
+This module handles the processing of database events that are queued for
+asynchronous processing. It reads events from the database queue, processes
+them using appropriate handlers, and removes them from the queue upon
+successful processing or failure.
+
+Key Features:
+- Reads database events from the queue
+- Processes events using table-specific handlers
+- Handles errors gracefully with logging
+- Removes processed events from the queue
+
+"""
+
 import logging
 
-from celeryapp import celery
-from models.product import ProductEmbedding
-from models.queue import DatabaseQueueMessage
 from pydantic import ValidationError
-from services.queues import queues
-from services.supabase import supabase
-from utils import dict_distinct
+
+from app.celeryapp import celery
+from app.models.product import ProductEmbedding
+from app.models.queue import DatabaseQueueItem, DatabaseQueueMessage
+from app.services.queues import database_events_queue_read, database_events_queue_remove
+from app.services.supabase import supabase, supabase_queues
+from app.utils import dict_distinct
 
 logger = logging.getLogger('uvicorn.error')
 
 
-@celery.task(name='database.process.product.insert')
+@celery.task(name='database.event_queue')
+def process_queue(params: dict):
+    logger.info('Starting database event queue processing')
+    items = database_events_queue_read(10)
+
+    if not items:
+        logger.info('No items found in the database event queue')
+        return
+
+    logger.info(f'Found {len(items)} items in the database event queue')
+
+    for item in items:
+        process_event.delay(item.model_dump())
+
+
+@celery.task(name='database.event')
+def process_event(params: dict):
+    item = DatabaseQueueItem.model_validate(params)
+
+    logger.info(
+        f'Processing event: {item.msg_id} - {item.message.type} for table {item.message.table}'
+    )
+    message = item.message
+
+    try:
+        handler_func = handlers_table.get((message.type, message.table))
+
+        if handler_func is None:
+            logger.error(
+                f'No handler found for message type {message.type} and table {message.table}'
+            )
+            raise ValueError(
+                f'Unknown message type {message.type} and table {message.table}'
+            )
+
+        handler_func.delay(message.model_dump())
+        logger.info(f'Successfully processed database event {item.msg_id}')
+        logger.info(f'Removing event {item.msg_id} from queue')
+        database_events_queue_remove(item.msg_id)
+    except Exception as e:
+        logger.error(f'Error processing event {item.msg_id}: {str(e)}', exc_info=True)
+        raise
+
+
+@celery.task(name='database.product.insert')
 def handle_product_insert_event(params: dict):
     message = DatabaseQueueMessage.model_validate(params)
     logger.info(f'Handling product insert event for product_id: {message.row_id}')
 
     try:
-        data = (
-            supabase.table('jobs')
-            .insert(
-                {
-                    'owner_id': message.curr['owner_id'],
-                    'product_id': message.row_id,
-                    'job_type': 'summary',
-                    'status': 'pending',
-                }
-            )
-            .execute()
-        )
+        params = {'product_id': message.row_id}
 
-        logger.info(
-            f'Created summary job for product_id: {message.row_id}, job_id: {data.data[0]["id"]}'
-        )
-
-        queue_message = {'job_id': data.data[0]['id'], 'product_id': message.row_id}
-
-        queues.rpc(
-            'send',
-            {
-                'queue_name': 'summary_jobs',
-                'sleep_seconds': 10,
-                'message': queue_message,
-            },
-        ).execute()
+        celery.send_task('product.summarize', kwargs={'params': params})
 
         logger.info(f'Sent summary job to queue for product_id: {message.row_id}')
     except Exception as e:
@@ -51,7 +88,7 @@ def handle_product_insert_event(params: dict):
         raise
 
 
-@celery.task(name='database.process.product.update')
+@celery.task(name='database.product.update')
 def handle_product_update_event(params: dict):
     message = DatabaseQueueMessage.model_validate(params)
     logger.info(f'Handling product update event for product_id: {message.row_id}')
@@ -84,7 +121,7 @@ def handle_product_update_event(params: dict):
 
         queue_message = {'job_id': data.data[0]['id'], 'product_id': message.row_id}
 
-        queues.rpc(
+        supabase_queues.rpc(
             'send',
             {
                 'queue_name': 'summary_jobs',
@@ -99,7 +136,7 @@ def handle_product_update_event(params: dict):
         raise
 
 
-@celery.task(name='database.process.product.delete')
+@celery.task(name='database.product.delete')
 def handle_product_delete_event(params: dict):
     message = DatabaseQueueMessage.model_validate(params)
     logger.info(f'Handling product delete event for product_id: {message.row_id}')
@@ -114,7 +151,7 @@ def handle_product_delete_event(params: dict):
         raise
 
 
-@celery.task(name='database.process.product.caption.insert')
+@celery.task(name='database.product.caption.insert')
 def handle_product_caption_insert_event(params: dict):
     message = DatabaseQueueMessage.model_validate(params)
     logger.info(
@@ -133,7 +170,7 @@ def handle_product_caption_insert_event(params: dict):
         raise
 
 
-@celery.task(name='database.process.product.caption.update')
+@celery.task(name='database.product.caption.update')
 def handle_product_caption_update_event(params: dict):
     message = DatabaseQueueMessage.model_validate(params)
     logger.info(
@@ -152,7 +189,7 @@ def handle_product_caption_update_event(params: dict):
         raise
 
 
-@celery.task(name='database.process.product.caption.delete')
+@celery.task(name='database.product.caption.delete')
 def handle_product_caption_delete_event(params: dict):
     message = DatabaseQueueMessage.model_validate(params)
     logger.info(
@@ -171,7 +208,7 @@ def handle_product_caption_delete_event(params: dict):
         raise
 
 
-@celery.task(name='database.process.product.embedding.insert')
+@celery.task(name='database.product.embedding.insert')
 def handle_product_embedding_insert_event(params: dict):
     message = DatabaseQueueMessage.model_validate(params)
     logger.info(
@@ -209,7 +246,7 @@ def handle_product_embedding_insert_event(params: dict):
             'product_embedding': product_embedding.model_dump(mode='json'),
         }
 
-        queues.rpc(
+        supabase_queues.rpc(
             'send',
             {
                 'queue_name': 'embeddings_jobs',
@@ -233,7 +270,7 @@ def handle_product_embedding_insert_event(params: dict):
         raise
 
 
-@celery.task(name='database.process.product.embedding.update')
+@celery.task(name='database.product.embedding.update')
 def handle_product_embedding_update_event(params: dict):
     message = DatabaseQueueMessage.model_validate(params)
     logger.info(f'Handling product embedding update event for id: {message.row_id}')
@@ -271,7 +308,7 @@ def handle_product_embedding_update_event(params: dict):
             'product_embedding': product_embedding.model_dump(mode='json'),
         }
 
-        queues.rpc(
+        supabase_queues.rpc(
             'send',
             {
                 'queue_name': 'embeddings_jobs',
@@ -290,7 +327,7 @@ def handle_product_embedding_update_event(params: dict):
         raise
 
 
-@celery.task(name='database.process.product.embedding.delete')
+@celery.task(name='database.product.embedding.delete')
 def handle_product_embedding_delete_event(params: dict):
     message = DatabaseQueueMessage.model_validate(params)
     logger.info(

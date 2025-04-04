@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
-from models.queue import EmbeddingQueueItem
+from app.models.queue import EmbeddingQueueItem
 
 
 class EmbeddingQueueResponse(BaseModel):

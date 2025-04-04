@@ -11,14 +11,14 @@ handles image captioning, product description optimization, and embedding genera
 
 import logging
 
-from config import config
-from models.job import JobStatus
-from models.product import ProductEmbedding
-from services.captioning import get_image_caption
-from services.embeddings import generate_embedding
-from services.optimizers import optimize_product_description
-from services.queues import embeddings_queue_read, embeddings_queue_remove
-from services.supabase import supabase
+from app.config import config
+from app.models.job import JobStatus
+from app.models.product import ProductEmbedding
+from app.services.captioning import get_image_caption
+from app.services.embeddings import generate_embedding
+from app.services.optimizers import optimize_product_description
+from app.services.queues import embeddings_queue_read, embeddings_queue_remove
+from app.services.supabase import supabase
 
 logger = logging.getLogger('uvicorn.error')
 
