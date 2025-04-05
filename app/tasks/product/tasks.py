@@ -6,7 +6,7 @@ from pydantic import BaseModel
 from app.models.job import Job, JobData, JobStatus
 from app.models.product import Product, ProductEmbedding, ProductEmbeddingData
 from app.services.embeddings import generate_embedding
-from app.services.optimizers import optimize_product_description
+from app.services.summarize import optimize_product_description
 
 logger = logging.getLogger('uvicorn.error')
 
@@ -80,15 +80,19 @@ def embeddings_batch(self, params: dict):
 
         logger.info(f'Creating embeddings for: {product_ids}')
 
-        message = generate_embedding(
+        embeddings = generate_embedding(
             [pe.content for pe in product_embeddings if pe.content is not None]
         )
         logger.debug(f'Embeddings generated for products: {product_ids}')
 
+        for pe, embedding in zip(product_embeddings, embeddings):
+            pe.embedding = embedding.values
+
+        ProductEmbedding.updateMany(product_embeddings)
+
     except Exception as e:
         logger.error(
-            f'Error creating summary for product: {job.product_id} for job: {job.job_id} with eror: {e}',
+            f'Error creating embeddings for products: {product_ids} with error: {e}',
             exc_info=True,
         )
-        Job.updateStatus(job.job_id, JobStatus.FAILED)
         raise
