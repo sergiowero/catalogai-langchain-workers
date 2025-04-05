@@ -15,4 +15,4 @@ celery.conf.update(result_persistent=True)
 celery.conf.update(worker_send_task_events=False)
 celery.conf.update(worker_prefetch_multiplier=1)
 
-celery.autodiscover_tasks(['app.tasks.database'])
+celery.autodiscover_tasks(['app.tasks.database', 'app.tasks.product'])

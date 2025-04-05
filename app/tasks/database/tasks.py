@@ -151,63 +151,6 @@ def handle_product_delete_event(params: dict):
         raise
 
 
-@celery.task(name='database.product.caption.insert')
-def handle_product_caption_insert_event(params: dict):
-    message = DatabaseQueueMessage.model_validate(params)
-    logger.info(
-        f'Handling product caption insert event for product_id: {message.row_id}'
-    )
-
-    try:
-        # Add your caption insert handling logic here
-        logger.info(
-            f'Successfully handled caption insert event for product_id: {message.row_id}'
-        )
-    except Exception as e:
-        logger.error(
-            f'Error handling product caption insert event: {str(e)}', exc_info=True
-        )
-        raise
-
-
-@celery.task(name='database.product.caption.update')
-def handle_product_caption_update_event(params: dict):
-    message = DatabaseQueueMessage.model_validate(params)
-    logger.info(
-        f'Handling product caption update event for product_id: {message.row_id}'
-    )
-
-    try:
-        # Add your caption update handling logic here
-        logger.info(
-            f'Successfully handled caption update event for product_id: {message.row_id}'
-        )
-    except Exception as e:
-        logger.error(
-            f'Error handling product caption update event: {str(e)}', exc_info=True
-        )
-        raise
-
-
-@celery.task(name='database.product.caption.delete')
-def handle_product_caption_delete_event(params: dict):
-    message = DatabaseQueueMessage.model_validate(params)
-    logger.info(
-        f'Handling product caption delete event for product_id: {message.row_id}'
-    )
-
-    try:
-        # Add your caption delete handling logic here
-        logger.info(
-            f'Successfully handled caption delete event for product_id: {message.row_id}'
-        )
-    except Exception as e:
-        logger.error(
-            f'Error handling product caption delete event: {str(e)}', exc_info=True
-        )
-        raise
-
-
 @celery.task(name='database.product.embedding.insert')
 def handle_product_embedding_insert_event(params: dict):
     message = DatabaseQueueMessage.model_validate(params)
@@ -223,37 +166,6 @@ def handle_product_embedding_insert_event(params: dict):
                 f'Product embedding already exists for product_id skipping summary job: {message.row_id}'
             )
             return
-
-        data = (
-            supabase.table('jobs')
-            .insert(
-                {
-                    'owner_id': product_embedding.owner_id,
-                    'product_id': product_embedding.product_id,
-                    'job_type': 'embeddings',
-                    'status': 'pending',
-                }
-            )
-            .execute()
-        )
-
-        logger.info(
-            f'Created embeddings job for product_id: {message.row_id}, job_id: {data.data[0]["id"]}'
-        )
-
-        queue_message = {
-            'job_id': data.data[0]['id'],
-            'product_embedding': product_embedding.model_dump(mode='json'),
-        }
-
-        supabase_queues.rpc(
-            'send',
-            {
-                'queue_name': 'embeddings_jobs',
-                'sleep_seconds': 10,
-                'message': queue_message,
-            },
-        ).execute()
 
         logger.info(
             f'Successfully handled embedding insert event for product_id: {message.row_id}'
@@ -283,39 +195,6 @@ def handle_product_embedding_update_event(params: dict):
                 f'No significant changes found in product embedding update for id: {message.row_id}'
             )
             return
-
-        product_embedding = ProductEmbedding.model_validate(message.curr)
-
-        data = (
-            supabase.table('jobs')
-            .insert(
-                {
-                    'owner_id': product_embedding.owner_id,
-                    'product_id': product_embedding.product_id,
-                    'job_type': 'embeddings',
-                    'status': 'pending',
-                }
-            )
-            .execute()
-        )
-
-        logger.info(
-            f'Created embeddings job for product_id: {message.row_id}, job_id: {data.data[0]["id"]}'
-        )
-
-        queue_message = {
-            'job_id': data.data[0]['id'],
-            'product_embedding': product_embedding.model_dump(mode='json'),
-        }
-
-        supabase_queues.rpc(
-            'send',
-            {
-                'queue_name': 'embeddings_jobs',
-                'sleep_seconds': 10,
-                'message': queue_message,
-            },
-        ).execute()
 
         logger.info(
             f'Successfully handled product embedding update event for id: {message.row_id}'
@@ -350,9 +229,6 @@ handlers_table = {
     ('INSERT', 'products'): handle_product_insert_event,
     ('UPDATE', 'products'): handle_product_update_event,
     ('DELETE', 'products'): handle_product_delete_event,
-    ('INSERT', 'product_captions'): handle_product_caption_insert_event,
-    ('UPDATE', 'product_captions'): handle_product_caption_update_event,
-    ('DELETE', 'product_captions'): handle_product_caption_delete_event,
     ('INSERT', 'product_embeddings'): handle_product_embedding_insert_event,
     ('UPDATE', 'product_embeddings'): handle_product_embedding_update_event,
     ('DELETE', 'product_embeddings'): handle_product_embedding_delete_event,

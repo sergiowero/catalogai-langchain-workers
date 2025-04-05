@@ -1,8 +1,8 @@
 import logging
 
-from celeryapp import celery
 from pydantic import BaseModel
 
+from app.celeryapp import celery
 from app.models.job import Job, JobData, JobStatus
 from app.models.product import Product, ProductEmbedding, ProductEmbeddingData
 from app.services.embeddings import generate_embedding
