@@ -6,13 +6,14 @@ celery = Celery(
     'main', broker=Config.CELERY_BROKER_URL, backend=Config.CELERY_BACKEND_URL
 )
 
-celery.conf.update(task_track_started=True)
-celery.conf.update(task_serializer='json')
-celery.conf.update(result_serializer='json')
-celery.conf.update(accept_content=['json'])
-# celery.conf.update(result_expires=200)
-celery.conf.update(result_persistent=True)
-celery.conf.update(worker_send_task_events=False)
-celery.conf.update(worker_prefetch_multiplier=1)
+celery.conf.task_track_started = True
+celery.conf.task_serializer = 'json'
+celery.conf.result_serializer = 'json'
+celery.conf.accept_content = ['json']
+celery.conf.event_serializer = 'json'
+# celery.conf.result_expires=200
+celery.conf.result_persistent = True
+celery.conf.worker_send_task_events = False
+celery.conf.worker_prefetch_multiplier = 1
 
 celery.autodiscover_tasks(['app.tasks.database', 'app.tasks.product'])
