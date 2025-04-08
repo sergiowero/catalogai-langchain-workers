@@ -1,7 +1,6 @@
-from langchain.prompts import ChatPromptTemplate
-from langchain_core.messages.ai import AIMessage
-from langchain_google_genai import ChatGoogleGenerativeAI
+from google.genai import types
 
+from app.clients.gemini import client
 from app.models.product import Product
 
 # Definir el system prompt (instrucciones generales)
@@ -25,42 +24,26 @@ Crea una descripción optimizada para la siguiente propiedad usando estos datos:
 Combina toda la información en un párrafo coherente y optimizado para RAG.
 """
 
-chat_prompt = ChatPromptTemplate.from_messages(
-    [('system', system_prompt), ('user', prompt_template)]
-)
 
-llm = ChatGoogleGenerativeAI(
-    model='gemini-2.0-flash'
-)  # Ajusta el modelo según tu necesidad
-chain = chat_prompt | llm
-
-
-def optimize_product_description(
-    product: Product, image_captions: list[str]
-) -> AIMessage:
-    """
-    Genera una descripción optimizada combinando los datos del producto y los captions.
-
-    Args:
-        product (Product): isntancia de producto
-        image_captions (list): Lista de descripciones de imágenes.
-    Returns:
-        str: Descripción optimizada de la propiedad.
-    """
-
+def sumarize_product(product: Product, image_captions: list[str]):
     image_captions_text = ', '.join(image_captions)
+
     metadata_text = ', '.join(
         f'{key}: {value}' for key, value in product.metadata.items()
     )
 
-    # Genera la descripción optimizada
-    optimized_description = chain.invoke(
-        input={
-            'name': product.name,
-            'description': product.description,
-            'metadata': metadata_text,
-            'price': product.price,
-            'image_captions': image_captions_text,
-        }
+    response = client.models.generate_content(
+        model='gemini-2.0-flash',
+        config=types.GenerateContentConfig(
+            system_instruction=system_prompt,
+        ),
+        contents=prompt_template.format(
+            name=product.name,
+            description=product.description,
+            metadata=metadata_text,
+            price=product.price,
+            image_captions=image_captions_text,
+        ),
     )
-    return optimized_description
+
+    return response

@@ -6,7 +6,7 @@ from app.celeryapp import celery
 from app.models.job import Job, JobData, JobStatus
 from app.models.product import Product, ProductEmbedding, ProductEmbeddingData
 from app.services.embeddings import generate_embedding
-from app.services.summarize import optimize_product_description
+from app.services.summarize import sumarize_product
 
 logger = logging.getLogger('uvicorn.error')
 
@@ -36,7 +36,7 @@ def summarize(self, params: dict):
 
         logger.info(f'Creating summary for: {job.product_id} for job: {job.job_id}')
 
-        message = optimize_product_description(product, [])
+        message = sumarize_product(product, [])
         logger.debug(
             f'Summary: {message} for product: {product.id} for job {job.job_id}'
         )

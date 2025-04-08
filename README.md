@@ -15,43 +15,33 @@ This service is part of the CatalogAI ecosystem, designed to handle background p
 ## Project Structure
 
 ```
-catalogai-langchain-workers
-├── app
-│   ├── main.py              # FastAPI application entry point
-│   ├── api
-│   │   └── routes.py        # API route definitions
-│   ├── services
-│   │   ├── embeddings.py    # Gemini embedding generation
-│   │   ├── queues.py        # Queue management
-│   │   ├── captioning.py    # Image captioning
-│   │   └── summarize.py     # Product description optimization
-│   ├── models
-│   │   ├── product.py       # Product data models
-│   │   ├── queue.py         # Queue data models
-│   │   └── embeddings.py    # Embedding data models
-│   ├── tasks
-│   │   ├── database
-│   │   │   └── tasks.py     # Database event handlers
-│   │   └── product
-│   │       └── tasks.py     # Product processing tasks
-│   └── celeryapp.py         # Celery configuration
-├── .env                     # Environment configuration
-├── requirements.txt         # Project dependencies
-├── README.md                # Project documentation
-└── config.py                # Configuration management
+app/
+├── api/       # API routes
+├── models/    # Pydantic models
+├── services/  # Service implementations
+├── tasks/     # Background job tasks
+├── usecases/  # Use cases for API routes
+└── workflows/ # Workflow definitions
 ```
 
-## Requirements
+## Tech Stack
 
-- Python 3.8+
+- Python 3.13.*
 - FastAPI
-- Google GenAI API
-- Supabase
-- Celery
-- Uvicorn
 - Pydantic
+- Supabase
+- Celery (for background tasks)
+- Uvicorn (ASGI server)
 
-## Setup Instructions
+## Code Style and Structure
+
+- Write concise, technical Python code with accurate examples
+- Use functional and declarative programming patterns; avoid classes
+- Prefer iteration and modularization over code duplication
+- Use descriptive variable names with auxiliary verbs (e.g., isLoading, hasError)
+- Structure repository files as specified in the project structure
+
+## Development Setup
 
 1. **Clone the repository**
    ```bash
@@ -71,14 +61,7 @@ catalogai-langchain-workers
    ```
 
 4. **Configure environment variables**
-   Create a `.env` file in the root directory with the following variables:
-   ```
-   SUPABASE_URL=<your-supabase-url>
-   SUPABASE_KEY=<your-supabase-key>
-   GOOGLE_API_KEY=<your-google-api-key>
-   CELERY_BROKER_URL=amqp://celery:celery12345@74.208.70.103:5672/dev
-   CELERY_BACKEND_URL=rpc://
-   ```
+   Create a `.env` file in the root directory with the required variables.
 
 5. **Run the application**
    ```bash
@@ -109,31 +92,35 @@ Retrieve items currently in the embeddings queue.
 }
 ```
 
-## Task Organization
-
-The project uses Celery for background task processing, with tasks organized into two main categories:
-
-1. **Database Tasks** (`app/tasks/database/tasks.py`)
-   - Handle database events and triggers
-   - Manage embeddings job creation
-   - Process product updates and deletions
-
-2. **Product Tasks** (`app/tasks/product/tasks.py`)
-   - Generate embeddings for products
-   - Process image captions
-   - Optimize product descriptions
-
-## Development
-
-The project uses FastAPI with async/await patterns for efficient background processing. It implements a queue-based architecture with Celery for distributed workloads, making it suitable for processing large volumes of product data.
-
 ## Contributing
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+When contributing to this project, please follow these guidelines:
+
+### Git Usage
+
+Commit Message Prefixes:
+- "fix:" for bug fixes
+- "feat:" for new features
+- "perf:" for performance improvements
+- "docs:" for documentation changes
+- "style:" for formatting changes
+- "refactor:" for code refactoring
+- "test:" for adding missing tests
+- "chore:" for maintenance tasks
+
+Rules:
+- Use lowercase for commit messages
+- Keep the summary line concise
+- Include description for non-obvious changes
+- Reference issue numbers when applicable
+
+### Code Style
+
+- Use functional methods for builders
+- Favor type annotations
+- Imports root is app
+- Annotate return method types only if different from None
+- Use ruff for formatting and linting
 
 ## License
 
