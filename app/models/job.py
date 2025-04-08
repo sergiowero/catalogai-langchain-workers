@@ -13,12 +13,6 @@ class JobStatus(str, Enum):
     FAILED = 'failed'
 
 
-class JobType(str, Enum):
-    SUMMARY = 'summary'
-    EMBEDDINGS = 'embeddings'
-    CAPTIONS = 'captions'
-
-
 class JobData(BaseModel):
     owner_id: uuid.UUID
     product_id: int
@@ -34,7 +28,6 @@ class Job(JobData):
         response = (
             supabase.table('jobs').select('*').eq('id', id).limit(1).single().execute()
         )
-
         return Job.model_validate(response.data)
 
     @staticmethod

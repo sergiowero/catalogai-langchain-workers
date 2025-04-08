@@ -2,18 +2,6 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict
 
-from app.models.product import Product
-
-
-class EmbeddingQueueMessage(BaseModel):
-    job_id: int
-    product: Product
-
-
-class EmbeddingQueueItem(BaseModel):
-    msg_id: int
-    message: EmbeddingQueueMessage
-
 
 class DatabaseQueueMessage(BaseModel):
     model_config = ConfigDict(frozen=True)
