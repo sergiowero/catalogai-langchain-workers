@@ -1,6 +1,6 @@
 from langchain_core.documents import Document
-from llms import provider
 
+from app.llms import provider
 from app.models.embeddings import EmbeddingResult
 
 

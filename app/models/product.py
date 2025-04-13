@@ -63,3 +63,20 @@ class ProductEmbedding(ProductEmbeddingData):
             .execute()
         )
         return [ProductEmbedding.model_validate(data) for data in response.data]
+
+
+class ProductCaptions(BaseModel):
+    product_id: int
+    image_url_hash: int
+    owner_id: uuid.UUID
+    captions: str
+    metadata: dict | None = None
+
+    @staticmethod
+    def insert(product_caption: 'ProductCaptions') -> 'ProductCaptions':
+        response = (
+            supabase.table('product_captions')
+            .upsert(product_caption.model_dump(mode='json'))
+            .execute()
+        )
+        return ProductCaptions.model_validate(response.data[0])

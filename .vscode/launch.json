@@ -5,7 +5,20 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python Debugger: FastAPI",
+            "name": "Worker",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "celery",
+            "args": [
+                "-A",
+                "app.celeryapp:celery",
+                "worker",
+                "--loglevel=info"
+            ],
+            "jinja": true
+        },
+        {
+            "name": "FastAPI",
             "type": "debugpy",
             "request": "launch",
             "module": "fastapi",

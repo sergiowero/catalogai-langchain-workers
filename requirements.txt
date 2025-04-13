@@ -9,3 +9,4 @@ Pillow
 langchain
 langchain-google-genai
 langchain_community
+google_genai

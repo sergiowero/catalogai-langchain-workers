@@ -6,7 +6,7 @@ It provides endpoints for generating embeddings and managing the embeddings queu
 """
 
 from fastapi import APIRouter, HTTPException
-from pydantic import ValidationError, BaseModel
+from pydantic import BaseModel, ValidationError
 
 from app.celeryapp import celery
 from app.models.requests import TaskRequest
@@ -47,11 +47,17 @@ def run_task(request: TaskRequest, task_name: str):
 class CaptionTestRequest(BaseModel):
     image_url: str
 
+
 @router.post('/test/caption', summary='Generate captions for images')
 async def generate_captions(request: CaptionTestRequest):
     """
     Generate captions for the given images.
     """
-    captions = captioning.get_image_caption(request.image_url)
-    return {'status': 'success', 'message': 'Captions generated successfully', 'data': captions}
-    
+    captions = captioning.get_image_caption(
+        captioning.get_image_data(request.image_url)
+    )
+    return {
+        'status': 'success',
+        'message': 'Captions generated successfully',
+        'data': captions,
+    }
