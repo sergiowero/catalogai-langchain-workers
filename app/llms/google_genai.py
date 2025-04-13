@@ -18,7 +18,7 @@ def create_embeddings() -> Embeddings:
 
 
 def create_llm() -> BaseLLM:
-    return GoogleGenerativeAI(model=DEFAULT_MODEL)
+    return GoogleGenerativeAI(model=DEFAULT_MODEL, temperature=1.0)
 
 
 def create_chat() -> BaseChatModel:

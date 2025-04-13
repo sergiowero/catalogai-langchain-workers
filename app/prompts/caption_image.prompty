@@ -1,6 +1,6 @@
 ---
-name: ExamplePrompt
-description: A prompt that uses context to ground an incoming question
+name: Caption Property Image
+description: A prompt that uses an image to generate captions
 authors:
   - Seth Juarez
 model:

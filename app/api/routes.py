@@ -6,10 +6,11 @@ It provides endpoints for generating embeddings and managing the embeddings queu
 """
 
 from fastapi import APIRouter, HTTPException
-from pydantic import ValidationError
+from pydantic import ValidationError, BaseModel
 
 from app.celeryapp import celery
 from app.models.requests import TaskRequest
+from app.services import captioning
 
 router = APIRouter(prefix='/api/v1')
 
@@ -41,3 +42,16 @@ def run_task(request: TaskRequest, task_name: str):
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+class CaptionTestRequest(BaseModel):
+    image_url: str
+
+@router.post('/test/caption', summary='Generate captions for images')
+async def generate_captions(request: CaptionTestRequest):
+    """
+    Generate captions for the given images.
+    """
+    captions = captioning.get_image_caption(request.image_url)
+    return {'status': 'success', 'message': 'Captions generated successfully', 'data': captions}
+    
