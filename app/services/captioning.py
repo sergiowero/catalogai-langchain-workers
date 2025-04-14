@@ -5,13 +5,10 @@ from langchain.chat_models import init_chat_model
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 
-system_prompt = """
-Tu tarea es describir la foto de una seccion de una casa de manera descriptiva, Analiza la imagen y proporciona una descripción concisa (máximo 100 palabras):
-Evita información irrelevante. Tu respuesta debe ser solo la descripción, sin ningún otro texto adicional.
-"""
+from app.prompts import captioning as prompts
 
 messages = [
-    ('system', system_prompt),
+    ('system', prompts.SYSTEM_PROMPT),
     (
         'human',
         [
