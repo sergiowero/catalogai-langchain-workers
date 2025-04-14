@@ -6,10 +6,12 @@ It provides endpoints for generating embeddings and managing the embeddings queu
 """
 
 from fastapi import APIRouter, HTTPException
-from pydantic import ValidationError
+from pydantic import BaseModel, ValidationError
 
 from app.celeryapp import celery
 from app.models.requests import TaskRequest
+from app.models.webhook import DatabaseWebhookPayload
+from app.services import captioning
 
 router = APIRouter(prefix='/api/v1')
 
@@ -41,3 +43,47 @@ def run_task(request: TaskRequest, task_name: str):
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post(
+    '/webhook',
+    summary='Handle database webhook events',
+    description="""
+    Handle database webhook events and execute the specified task.
+    """,
+)
+async def database_webhook(payload: DatabaseWebhookPayload):
+    """
+    Handle database webhook events.
+    """
+    try:
+        res = celery.send_task(
+            'database.webhook', kwargs={'params': payload.model_dump(mode='json')}
+        )
+
+        return {'status': res.state, 'task_id': res.id, 'message': 'Webhook processed'}
+    except HTTPException as e:
+        raise e
+    except ValidationError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+class CaptionTestRequest(BaseModel):
+    image_url: str
+
+
+@router.post('/test/caption', summary='Generate captions for images')
+async def generate_captions(request: CaptionTestRequest):
+    """
+    Generate captions for the given images.
+    """
+    captions = captioning.get_image_caption(
+        captioning.get_image_data(request.image_url)
+    )
+    return {
+        'status': 'success',
+        'message': 'Captions generated successfully',
+        'data': captions,
+    }

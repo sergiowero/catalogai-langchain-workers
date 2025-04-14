@@ -3,7 +3,10 @@ supabase
 python-dotenv
 uvicorn
 pydantic
-google-genai
 celery[rabbitmq]
 flower
 Pillow
+langchain
+langchain-google-genai
+langchain_community
+google_genai

@@ -1,6 +1,4 @@
 from google.genai import types
-
-from app.clients.gemini import client
 from app.models.product import Product
 
 # Definir el system prompt (instrucciones generales)

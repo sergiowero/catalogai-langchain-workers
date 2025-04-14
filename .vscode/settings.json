@@ -2,8 +2,7 @@
     "files.exclude": {
         "**/__pycache__": true,
         "**/.pytest_cache": true,
-        "**/*.pyc": true,
-        "**/.venv": true
+        "**/*.pyc": true
     },
     "[python]": {
         "editor.formatOnSave": true,
@@ -13,5 +12,22 @@
             "source.organizeImports": "explicit"
         }
     },
-    "ruff.nativeServer": "on"
+    "ruff.nativeServer": "on",
+    "prompty.modelConfigurations": [
+        {
+            "name": "default",
+            "type": "azure_openai",
+            "api_version": "2023-12-01-preview",
+            "azure_endpoint": "${env:AZURE_OPENAI_ENDPOINT}",
+            "azure_deployment": "",
+            "api_key": "${env:AZURE_OPENAI_API_KEY}"
+        },
+        {
+            "name": "gpt-3.5-turbo",
+            "type": "openai",
+            "api_key": "${env:OPENAI_API_KEY}",
+            "organization": "${env:OPENAI_ORG_ID}",
+            "base_url": "${env:OPENAI_BASE_URL}"
+        }
+    ]
 }

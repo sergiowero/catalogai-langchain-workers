@@ -1,20 +1,13 @@
-from google.genai import types
+from langchain_core.documents import Document
 
-from app.clients.gemini import DEFAULT_EMBEDDING_MODEL, client
-from app.models.embeddings import Embedding
+from app.llms import provider
+from app.models.embeddings import EmbeddingResult
 
 
-def generate_embedding(contents: list[str]):
-    """
-    Genera un embedding para el texto usando Gemini
-    """
+def embed_documents(documents: list[Document]):
+    """ """
 
-    result = client.models.embed_content(
-        model=DEFAULT_EMBEDDING_MODEL,
-        contents=contents,
-        config=types.EmbedContentConfig(
-            task_type='RETRIEVAL_DOCUMENT', output_dimensionality=768
-        ),
-    )
+    embeddings = provider.get_vector_store('supabase', 'google_genai')
+    result = embeddings.add_documents(documents)
 
-    return [Embedding(values=e.values) for e in result.embeddings]
+    return [EmbeddingResult(values=e.values) for e in result]

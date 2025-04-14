@@ -1,6 +1,7 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
-class Embedding(BaseModel):
+class EmbeddingResult(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
     values: list[float]
-
