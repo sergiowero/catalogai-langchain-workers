@@ -16,13 +16,3 @@ class DatabaseQueueMessage(BaseModel):
 class DatabaseQueueItem(BaseModel):
     msg_id: int
     message: DatabaseQueueMessage
-
-
-class DatabaseWebhookPayload(BaseModel):
-    model_config = ConfigDict(frozen=True)
-
-    type: str
-    table: str
-    schema: str
-    record: dict[str, Any] | None
-    old_record: dict[str, Any] | None

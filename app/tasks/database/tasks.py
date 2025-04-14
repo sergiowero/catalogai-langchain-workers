@@ -21,6 +21,7 @@ from pydantic import ValidationError
 from app.celeryapp import celery
 from app.models.product import ProductEmbedding
 from app.models.queue import DatabaseQueueItem, DatabaseQueueMessage
+from app.models.webhook import DatabaseWebhookPayload
 from app.services.queues import database_events_queue_read, database_events_queue_remove
 from app.services.supabase import supabase, supabase_queues
 from app.utils import dict_distinct
@@ -41,6 +42,24 @@ def process_queue(params: dict):
 
     for item in items:
         process_event.delay(item.model_dump())
+
+
+@celery.task(name='database.webhook')
+def process_webhook(params: dict):
+    payload = DatabaseWebhookPayload.model_validate(params)
+
+    logger.info(f'Processing webhook event: {payload.type} - {payload.table}')
+
+    try:
+        logger.info(
+            f'Successfully processed database webhook {payload.type} - {payload.table}'
+        )
+    except Exception as e:
+        logger.error(
+            f'Error processing webhook {payload.type} - {payload.table}: {str(e)}',
+            exc_info=True,
+        )
+        raise
 
 
 @celery.task(name='database.event')

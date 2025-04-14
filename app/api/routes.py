@@ -10,6 +10,7 @@ from pydantic import BaseModel, ValidationError
 
 from app.celeryapp import celery
 from app.models.requests import TaskRequest
+from app.models.webhook import DatabaseWebhookPayload
 from app.services import captioning
 
 router = APIRouter(prefix='/api/v1')
@@ -36,6 +37,31 @@ def run_task(request: TaskRequest, task_name: str):
         res = celery.send_task(task_name, kwargs={'params': request.parameters})
 
         return {'status': res.state, 'task_name': task_name, 'task_id': res.id}
+    except HTTPException as e:
+        raise e
+    except ValidationError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post(
+    '/webhook',
+    summary='Handle database webhook events',
+    description="""
+    Handle database webhook events and execute the specified task.
+    """,
+)
+async def database_webhook(payload: DatabaseWebhookPayload):
+    """
+    Handle database webhook events.
+    """
+    try:
+        res = celery.send_task(
+            'database.webhook', kwargs={'params': payload.model_dump(mode='json')}
+        )
+
+        return {'status': res.state, 'task_id': res.id, 'message': 'Webhook processed'}
     except HTTPException as e:
         raise e
     except ValidationError as e:
