@@ -8,6 +8,5 @@ class DatabaseWebhookPayload(BaseModel):
 
     type: str
     table: str
-    schema: str
     record: dict[str, Any] | None
     old_record: dict[str, Any] | None

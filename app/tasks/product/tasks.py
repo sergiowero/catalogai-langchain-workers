@@ -6,12 +6,10 @@ from celery import chain
 from pydantic import BaseModel
 
 from app.celeryapp import celery
-from app.models.job import Job, JobData, JobStatus
 from app.models.product import (
     Product,
     ProductCaptions,
     ProductEmbedding,
-    ProductEmbeddingData,
 )
 from app.services.captioning import get_image_caption, get_image_data
 from app.services.embeddings import embed_documents
@@ -20,57 +18,19 @@ from app.services.summarize import sumarize_product
 logger = logging.getLogger('uvicorn.error')
 
 
-class SummarizeParams(BaseModel):
-    product_id: int
-
-
 @celery.task(bind=True, name='product.summarize')
 def summarize(self, params: dict):
     try:
-        params = SummarizeParams.model_validate(params)
+        product = Product.model_validate(params)
 
-        product = Product.fetchById(params.product_id)
-        job = Job.insert(
-            JobData(
-                product_id=product.id,
-                owner_id=product.owner_id,
-                job_type='summary',
-                status=JobStatus.PROCESSING,
-            )
-        )
-
-        logger.info(f'Creating summary for: {job.product_id} for job: {job.job_id}')
-
-        message = sumarize_product(product, [])
-        logger.debug(
-            f'Summary: {message} for product: {product.id} for job {job.job_id}'
-        )
-
-        # validate before insertion
-        product_embedding = ProductEmbeddingData.model_validate(
-            {
-                'owner_id': product.owner_id,
-                'product_id': product.id,
-                'content': message.content,
-                'embedding': None,
-                'metadata': {
-                    'job_id': job.job_id,
-                    'optimizer_type': message.type,
-                    'optimiser_request_id': message.id,
-                    'task_execution_id': self.request.id,
-                },
-            }
-        )
-
-        product_embedding = ProductEmbedding.insert(product_embedding)
-        Job.updateStatus(job.job_id, JobStatus.COMPLETED)
+        message = sumarize_product(product)
+        logger.debug(f'Summary for product {product.id}: {message}')
 
     except Exception as e:
         logger.error(
-            f'Error creating summary for product: {job.product_id} for job: {job.job_id} with eror: {e}',
+            f'Error creating summary for product: {product.id} with eror: {str(e)}',
             exc_info=True,
         )
-        Job.updateStatus(job.job_id, JobStatus.FAILED)
         raise
 
 
