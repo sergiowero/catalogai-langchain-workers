@@ -7,7 +7,7 @@ from langchain_google_genai import (
     GoogleGenerativeAIEmbeddings,
 )
 
-DEFAULT_EMBEDDING_MODEL = 'text-embedding-004'
+DEFAULT_EMBEDDING_MODEL = 'models/text-embedding-004'
 DEFAULT_MODEL = 'gemini-2.0-flash'
 
 

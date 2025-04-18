@@ -1,8 +1,9 @@
 from langchain_community.vectorstores.supabase import SupabaseVectorStore
-from services.supabase import supabase as client
+
+from app.services.supabase import supabase as client
 
 
-def get_vector_store(embeddings):
+def get_vector_store(embedding, table_name: str) -> SupabaseVectorStore:
     return SupabaseVectorStore(
-        client=client, table_name='documents', embeddings=embeddings
+        client=client, table_name=table_name, embedding=embedding
     )

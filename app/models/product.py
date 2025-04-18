@@ -44,7 +44,7 @@ class ProductEmbedding(ProductEmbeddingData):
     @staticmethod
     def insert(product_embedding: ProductEmbeddingData):
         response = (
-            supabase.table('product_embeddings')
+            supabase.table('product_documents')
             .insert(product_embedding.model_dump(mode='json'))
             .execute()
         )
@@ -52,13 +52,13 @@ class ProductEmbedding(ProductEmbeddingData):
 
     def fetchMany(ids: list[int]):
         response = (
-            supabase.table('product_embeddings').select('*').in_('id', ids).execute()
+            supabase.table('product_documents').select('*').in_('id', ids).execute()
         )
         return [ProductEmbedding.model_validate(data) for data in response.data]
 
     def updateContent(data: list[dict]):
         response = (
-            supabase.table('product_embeddings')
+            supabase.table('product_documents')
             .upsert([{'id': e['id'], 'embedding': e['embedding']} for e in data])
             .execute()
         )

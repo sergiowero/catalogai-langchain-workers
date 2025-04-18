@@ -63,7 +63,7 @@ def handle_product_insert_event(params: dict):
     logger.info(f'Handling product insert event for product_id: {payload.record["id"]}')
 
     try:
-        celery.send_task('product.summarize', kwargs={'params': payload.record})
+        celery.send_task('product.full', kwargs={'params': payload.record})
 
         logger.info(f'Sent summary job to queue for product_id: {payload.record["id"]}')
     except Exception as e:
@@ -85,9 +85,8 @@ def handle_product_update_event(params: dict):
             )
             return
 
-        celery.send_task('product.summarize', kwargs={'params': payload.record})
+        celery.send_task('product.full', kwargs={'params': payload.record})
 
-        logger.info(f'Sent summary job to queue for product_id: {payload.row_id}')
     except Exception as e:
         logger.error(f'Error handling product update event: {str(e)}', exc_info=True)
         raise

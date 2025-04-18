@@ -11,26 +11,95 @@ from app.models.product import (
     ProductCaptions,
     ProductEmbedding,
 )
+from app.services import summarize
 from app.services.captioning import get_image_caption, get_image_data
 from app.services.embeddings import embed_documents
-from app.services.summarize import sumarize_product
 
 logger = logging.getLogger('uvicorn.error')
 
 
-@celery.task(bind=True, name='product.summarize')
-def summarize(self, params: dict):
+@celery.task(bind=True, name='product.full')
+def product(self, params: dict):
+    """
+    Generate product embeddings for the given products.
+    """
+    logger.info(f'Processing product: {params}')
+    try:
+        return chain(
+            summarize_rag.s(params),
+            summarize_marketing.s(params),
+            sumarize_save.s(params),
+        )()
+
+    except Exception as e:
+        logger.error(
+            f'Error generating product embeddings with error: {e}',
+            exc_info=True,
+        )
+        raise
+
+
+@celery.task(bind=True, name='product.summarize.rag')
+def summarize_rag(self, params: dict):
     try:
         product = Product.model_validate(params)
 
-        message = sumarize_product(product)
-        logger.debug(f'Summary for product {product.id}: {message}')
+        message = summarize.generate_rag_description(product)
+        logger.info(f'Rag descrption for product {product.id}: {message}')
+        return message
 
     except Exception as e:
         logger.error(
             f'Error creating summary for product: {product.id} with eror: {str(e)}',
             exc_info=True,
         )
+        raise
+
+
+@celery.task(bind=True, name='product.summarize.marketing')
+def summarize_marketing(self, rag_description: str, params: dict):
+    try:
+        product = Product.model_validate(params)
+
+        message = summarize.sumarize_marketing_description(rag_description, product)
+        logger.info(f'Marketing description product {product.id}: {message}')
+
+        return {
+            'marketing': message,
+            'rag': rag_description,
+        }
+
+    except Exception as e:
+        logger.error(
+            f'Error creating summary for product: {product.id} with eror: {str(e)}',
+            exc_info=True,
+        )
+        raise
+
+
+@celery.task(bind=True, name='product.summarize.save')
+def sumarize_save(self, results: dict, params: dict):
+    """
+    Save the results of the summarization to the database.
+    """
+    try:
+        product = Product.model_validate(params)
+
+        logger.info(
+            f'Saving summaries for product: {product.id} and owner: {product.owner_id}'
+        )
+
+        summarize.upsert_sumarize_results(
+            results['rag'],
+            results['marketing'],
+            product,
+        )
+        logger.info(
+            f'Summaries saved for product {product.id} and owner: {product.owner_id}'
+        )
+
+    except Exception as e:
+        logger.error(f'Error saving summaries with error: {e}', exc_info=True)
         raise
 
 

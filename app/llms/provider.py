@@ -35,11 +35,13 @@ def get_embeddings(provider_name) -> Embeddings:
     return embeddings
 
 
-def get_vector_store(store_provider_name, embeddings_provider_name) -> VectorStore:
+def init_vector_store(
+    store_provider_name, embeddings_provider_name, table_name: str
+) -> VectorStore:
     embeddings = get_embeddings(embeddings_provider_name)
     if store_provider_name == 'supabase':
         from app.llms.supabase_vecstore import get_vector_store
 
-        return get_vector_store(embeddings)
+        return get_vector_store(embeddings, table_name)
     else:
         raise ValueError(f'Unsupported vector store provider: {store_provider_name}')

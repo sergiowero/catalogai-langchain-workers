@@ -21,6 +21,7 @@ Instrucciones Adicionales:
 - Adapta el tono y el estilo al público objetivo. Si estás vendiendo una propiedad de lujo, utiliza un lenguaje más sofisticado. Si estás vendiendo una propiedad para familias jóvenes, utiliza un lenguaje más informal y amigable.
 - Mantén la descripción concisa y fácil de leer. No aburras al lector con detalles innecesarios.
 - Finaliza con una llamada a la acción. Anima al lector a programar una visita o a solicitar más información.
+- Solo responde con la descripción de la propiedad. No incluyas ninguna otra información o contexto adicional.
 
 Ejemplo de Salida Esperada (Basado en el ejemplo del Prompt 1):
 
