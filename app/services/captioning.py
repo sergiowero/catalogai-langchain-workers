@@ -1,10 +1,10 @@
 import base64
 
 import httpx
-from langchain.chat_models import init_chat_model
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 
+from app.llms import provider
 from app.prompts import captioning as prompts
 
 messages = [
@@ -34,7 +34,7 @@ def get_image_caption(image_data: bytes):
     Este es un placeholder: reemplázalo con la llamada real a la API de Gemini.
     """
 
-    llm = init_chat_model(
+    llm = provider.provide_llm(
         model='gemini-2.0-flash-lite', model_provider='google_genai', temperature=1
     )
 

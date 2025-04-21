@@ -1,4 +1,3 @@
-from langchain.chat_models import init_chat_model
 from langchain_core.documents import Document
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
@@ -29,7 +28,7 @@ def generate_rag_description(product: Product):
         f'{key}: {value}' for key, value in product.metadata.items()
     )
 
-    llm = init_chat_model(
+    llm = provider.provide_llm(
         model='gemini-2.0-flash', model_provider='google_genai', temperature=1
     )
 
@@ -40,7 +39,7 @@ def generate_rag_description(product: Product):
 
 
 def sumarize_marketing_description(description: str, product: Product):
-    llm = init_chat_model(
+    llm = provider.provide_llm(
         model='gemini-2.0-flash', model_provider='google_genai', temperature=1
     )
 
@@ -54,8 +53,8 @@ def upsert_sumarize_results(rag: str, marketing: str, product: Product):
     """
     Save the results of the summarization to the database.
     """
-    vector_store = provider.init_vector_store(
-        store_provider_name='supabase',
+    vector_store = provider.provide_vector_store(
+        vector_store_provider_name='supabase',
         embeddings_provider_name='google_genai',
         table_name='product_documents',
     )
